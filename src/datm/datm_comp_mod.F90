@@ -888,10 +888,12 @@ CONTAINS
 
     case('CLMNCEP')
        if (firstcall) then
+#ifndef COUP_OAS_ICON
           if (swind < 1 .or. stbot < 1) then
              write(logunit,F00) ' ERROR: wind and tbot must be in streams for CLMNCEP'
              call shr_sys_abort(trim(subname)//' ERROR: wind and tbot must be in streams for CLMNCEP')
           endif
+#endif
           rtmp = maxval(a2x%rAttr(ktbot,:))
           call shr_mpi_max(rtmp,tbotmax,mpicom,'datm_tbot',all=.true.)
           rtmp = maxval(x2a%rAttr(kanidr,:))
@@ -948,8 +950,10 @@ CONTAINS
              e = datm_shr_esat(avstrm%rAttr(stdew,n),tbot)
              qsat = (0.622_R8 * e)/(pbot - 0.378_R8 * e)
              a2x%rAttr(kshum,n) = qsat
+#ifndef COUP_OAS_ICON
           else
              call shr_sys_abort(subname//'ERROR: cannot compute shum')
+#endif
           endif
 
           !--- density ---
@@ -986,8 +990,10 @@ CONTAINS
              a2x%rAttr(kswvdr,n) = ratio_rvrf*swvdr
              swvdf = avstrm%rAttr(sswdn,n) * 0.50_R8
              a2x%rAttr(kswvdf,n) = (1._R8 - ratio_rvrf)*swvdf
+#ifndef COUP_OAS_ICON
           else
              call shr_sys_abort(subName//'ERROR: cannot compute short-wave down')
+#endif
           endif
 
           !--- swnet: a diagnostic quantity ---
@@ -1007,8 +1013,10 @@ CONTAINS
           elseif (sprecn > 0) then
              a2x%rAttr(krc,n) = avstrm%rAttr(sprecn,n)*0.1_R8
              a2x%rAttr(krl,n) = avstrm%rAttr(sprecn,n)*0.9_R8
+#ifndef COUP_OAS_ICON
           else
              call shr_sys_abort(subName//'ERROR: cannot compute rain and snow')
+#endif
           endif
 
           !--- split precip between rain & snow ---
