@@ -887,13 +887,12 @@ CONTAINS
        enddo   ! lsize
 
     case('CLMNCEP')
-       if (firstcall) then
 #ifndef COUP_OAS_ICON
+       if (firstcall) then
           if (swind < 1 .or. stbot < 1) then
              write(logunit,F00) ' ERROR: wind and tbot must be in streams for CLMNCEP'
              call shr_sys_abort(trim(subname)//' ERROR: wind and tbot must be in streams for CLMNCEP')
           endif
-#endif
           rtmp = maxval(a2x%rAttr(ktbot,:))
           call shr_mpi_max(rtmp,tbotmax,mpicom,'datm_tbot',all=.true.)
           rtmp = maxval(x2a%rAttr(kanidr,:))
@@ -905,6 +904,7 @@ CONTAINS
           if (my_task == master_task) &
                write(logunit,*) trim(subname),' max values = ',tbotmax,tdewmax,anidrmax
        endif
+#endif
        lsize = mct_avect_lsize(a2x)
        do n = 1,lsize
           !--- bottom layer height ---
@@ -920,10 +920,13 @@ CONTAINS
           if (spbot < 1) a2x%rAttr(kpbot,n) = pstd
           a2x%rAttr(kpslv,n) = a2x%rAttr(kpbot,n)
 
+#ifndef COUP_OAS_ICON
           !--- u, v wind velocity ---
           a2x%rAttr(ku,n) = avstrm%rAttr(swind,n)/sqrt(2.0_R8)
           a2x%rAttr(kv,n) = a2x%rAttr(ku,n)
+#endif
 
+#ifndef COUP_OAS_ICON
           !--- specific humidity ---
           tbot = a2x%rAttr(ktbot,n)
           pbot = a2x%rAttr(kpbot,n)
@@ -950,12 +953,12 @@ CONTAINS
              e = datm_shr_esat(avstrm%rAttr(stdew,n),tbot)
              qsat = (0.622_R8 * e)/(pbot - 0.378_R8 * e)
              a2x%rAttr(kshum,n) = qsat
-#ifndef COUP_OAS_ICON
           else
              call shr_sys_abort(subname//'ERROR: cannot compute shum')
-#endif
           endif
+#endif
 
+#ifndef COUP_OAS_ICON
           !--- density ---
           vp = (a2x%rAttr(kshum,n)*pbot) / (0.622_R8 + 0.378_R8 * a2x%rAttr(kshum,n))
           a2x%rAttr(kdens,n) = (pbot - 0.378_R8 * vp) / (tbot*rdair)
@@ -990,11 +993,10 @@ CONTAINS
              a2x%rAttr(kswvdr,n) = ratio_rvrf*swvdr
              swvdf = avstrm%rAttr(sswdn,n) * 0.50_R8
              a2x%rAttr(kswvdf,n) = (1._R8 - ratio_rvrf)*swvdf
-#ifndef COUP_OAS_ICON
           else
              call shr_sys_abort(subName//'ERROR: cannot compute short-wave down')
-#endif
           endif
+#endif
 
           !--- swnet: a diagnostic quantity ---
           if (anidrmax < 1.0e-8 .or. anidrmax > SHR_CONST_SPVAL * 0.9_R8) then
@@ -1006,6 +1008,7 @@ CONTAINS
                   (1.0_R8-x2a%rAttr(kavsdf,n))*a2x%rAttr(kswvdf,n)
           endif
 
+#ifndef COUP_OAS_ICON
           !--- rain and snow ---
           if (sprecc > 0 .and. sprecl > 0) then
              a2x%rAttr(krc,n) = avstrm%rAttr(sprecc,n)
@@ -1013,10 +1016,8 @@ CONTAINS
           elseif (sprecn > 0) then
              a2x%rAttr(krc,n) = avstrm%rAttr(sprecn,n)*0.1_R8
              a2x%rAttr(krl,n) = avstrm%rAttr(sprecn,n)*0.9_R8
-#ifndef COUP_OAS_ICON
           else
              call shr_sys_abort(subName//'ERROR: cannot compute rain and snow')
-#endif
           endif
 
           !--- split precip between rain & snow ---
@@ -1025,7 +1026,7 @@ CONTAINS
           a2x%rAttr(ksl,n) = max(0.0_R8, a2x%rAttr(krl,n)*(1.0_R8 - frac) )
           a2x%rAttr(krc,n) = max(0.0_R8, a2x%rAttr(krc,n)*(         frac) )
           a2x%rAttr(krl,n) = max(0.0_R8, a2x%rAttr(krl,n)*(         frac) )
-
+#endif
        enddo
 
     end select
@@ -1083,6 +1084,7 @@ CONTAINS
        end do
     endif
 
+#ifndef COUP_OAS_ICON
     ! temperature
     if (stbot_af > 0) then
        do n = 1,lsize
@@ -1115,6 +1117,7 @@ CONTAINS
           a2x%rAttr(kswvdf,n) = a2x%rAttr(kswvdf,n)*avstrm%rAttr(sswdn_af,n)
        enddo
     endif
+#endif
     !----------------------------------------------------------
     ! bias correction / anomaly forcing ( end block )
     !----------------------------------------------------------
