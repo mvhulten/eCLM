@@ -924,9 +924,7 @@ CONTAINS
           !--- u, v wind velocity ---
           a2x%rAttr(ku,n) = avstrm%rAttr(swind,n)/sqrt(2.0_R8)
           a2x%rAttr(kv,n) = a2x%rAttr(ku,n)
-#endif
 
-#ifndef COUP_OAS_ICON
           !--- specific humidity ---
           tbot = a2x%rAttr(ktbot,n)
           pbot = a2x%rAttr(kpbot,n)
@@ -956,9 +954,7 @@ CONTAINS
           else
              call shr_sys_abort(subname//'ERROR: cannot compute shum')
           endif
-#endif
 
-#ifndef COUP_OAS_ICON
           !--- density ---
           vp = (a2x%rAttr(kshum,n)*pbot) / (0.622_R8 + 0.378_R8 * a2x%rAttr(kshum,n))
           a2x%rAttr(kdens,n) = (pbot - 0.378_R8 * vp) / (tbot*rdair)
@@ -996,7 +992,6 @@ CONTAINS
           else
              call shr_sys_abort(subName//'ERROR: cannot compute short-wave down')
           endif
-#endif
 
           !--- swnet: a diagnostic quantity ---
           if (anidrmax < 1.0e-8 .or. anidrmax > SHR_CONST_SPVAL * 0.9_R8) then
@@ -1008,7 +1003,6 @@ CONTAINS
                   (1.0_R8-x2a%rAttr(kavsdf,n))*a2x%rAttr(kswvdf,n)
           endif
 
-#ifndef COUP_OAS_ICON
           !--- rain and snow ---
           if (sprecc > 0 .and. sprecl > 0) then
              a2x%rAttr(krc,n) = avstrm%rAttr(sprecc,n)
