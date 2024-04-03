@@ -113,10 +113,13 @@ contains
 
        ! Determine required receive fields
 
+#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_hgt_grc(g)                  = x2l(index_x2l_Sa_z,i)         ! zgcmxy  Atm state m
+#endif
        atm2lnd_inst%forc_topo_grc(g)                 = x2l(index_x2l_Sa_topo,i)      ! Atm surface height (m)
        atm2lnd_inst%forc_u_grc(g)                    = x2l(index_x2l_Sa_u,i)         ! forc_uxy  Atm state m/s
        atm2lnd_inst%forc_v_grc(g)                    = x2l(index_x2l_Sa_v,i)         ! forc_vxy  Atm state m/s
+#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_solad_grc(g,2)              = x2l(index_x2l_Faxa_swndr,i)   ! forc_sollxy  Atm flux  W/m^2
        atm2lnd_inst%forc_solad_grc(g,1)              = x2l(index_x2l_Faxa_swvdr,i)   ! forc_solsxy  Atm flux  W/m^2
        atm2lnd_inst%forc_solai_grc(g,2)              = x2l(index_x2l_Faxa_swndf,i)   ! forc_solldxy Atm flux  W/m^2
@@ -126,13 +129,14 @@ contains
        atm2lnd_inst%forc_q_not_downscaled_grc(g)     = x2l(index_x2l_Sa_shum,i)      ! forc_qxy  Atm state kg/kg
        atm2lnd_inst%forc_pbot_not_downscaled_grc(g)  = x2l(index_x2l_Sa_pbot,i)      ! ptcmxy  Atm state Pa
        atm2lnd_inst%forc_t_not_downscaled_grc(g)     = x2l(index_x2l_Sa_tbot,i)      ! forc_txy  Atm state K
-       !atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = x2l(index_x2l_Faxa_lwdn,i)    ! flwdsxy Atm flux  W/m^2
+       atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = x2l(index_x2l_Faxa_lwdn,i)    ! flwdsxy Atm flux  W/m^2
        !atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = 288.0_r8
 
        forc_rainc                                    = x2l(index_x2l_Faxa_rainc,i)   ! mm/s
        forc_rainl                                    = x2l(index_x2l_Faxa_rainl,i)   ! mm/s
        forc_snowc                                    = x2l(index_x2l_Faxa_snowc,i)   ! mm/s
        forc_snowl                                    = x2l(index_x2l_Faxa_snowl,i)   ! mm/s
+#endif
 
        ! atmosphere coupling, for prognostic/prescribed aerosols
        atm2lnd_inst%forc_aer_grc(g,1)                = x2l(index_x2l_Faxa_bcphidry,i)
@@ -185,8 +189,10 @@ contains
        atm2lnd_inst%forc_solar_grc(g) = atm2lnd_inst%forc_solad_grc(g,1) + atm2lnd_inst%forc_solai_grc(g,1) + &
                                         atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,2)
 
+#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
        atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
+#endif
 
        if (forc_t > SHR_CONST_TKFRZ) then
           e = esatw(tdc(forc_t))
@@ -206,6 +212,7 @@ contains
 
        atm2lnd_inst%forc_rh_grc(g) = 100.0_r8*(forc_q / qsat)
 
+#ifndef COUP_OAS_ICON
        ! Check that solar, specific-humidity and LW downward aren't negative
        if ( atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) <= 0.0_r8 )then
           call endrun( sub//' ERROR: Longwave down sent from the atmosphere model is negative or zero' )
@@ -218,6 +225,7 @@ contains
        if ( atm2lnd_inst%forc_q_not_downscaled_grc(g) < 0.0_r8 )then
           call endrun( sub//' ERROR: Bottom layer specific humidty sent from the atmosphere model is less than zero' )
        end if
+#endif
 
        ! Check if any input from the coupler is NaN
        if ( any(isnan(x2l(:,i))) )then
