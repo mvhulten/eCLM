@@ -180,13 +180,11 @@ contains
             (forc_pbot - 0.378_r8 * atm2lnd_inst%forc_vp_grc(g)) / (rair * forc_t)
        atm2lnd_inst%forc_po2_grc(g)   = o2_molar_const * forc_pbot
        atm2lnd_inst%forc_wind_grc(g)  = sqrt(atm2lnd_inst%forc_u_grc(g)**2 + atm2lnd_inst%forc_v_grc(g)**2)
-#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_solar_grc(g) = atm2lnd_inst%forc_solad_grc(g,1) + atm2lnd_inst%forc_solai_grc(g,1) + &
                                         atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,2)
 
        atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
        atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
-#endif
 
        if (forc_t > SHR_CONST_TKFRZ) then
           e = esatw(tdc(forc_t))
@@ -206,7 +204,6 @@ contains
 
        atm2lnd_inst%forc_rh_grc(g) = 100.0_r8*(forc_q / qsat)
 
-#ifndef COUP_OAS_ICON
        ! Check that solar, specific-humidity and LW downward aren't negative
        if ( atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) <= 0.0_r8 )then
           call endrun( sub//' ERROR: Longwave down sent from the atmosphere model is negative or zero' )
@@ -219,7 +216,6 @@ contains
        if ( atm2lnd_inst%forc_q_not_downscaled_grc(g) < 0.0_r8 )then
           call endrun( sub//' ERROR: Bottom layer specific humidty sent from the atmosphere model is less than zero' )
        end if
-#endif
 
        ! Check if any input from the coupler is NaN
        if ( any(isnan(x2l(:,i))) )then
