@@ -55,6 +55,8 @@ contains
 #ifdef COUP_OAS_ICON
   subroutine oas_receive_icon(bounds, seconds_elapsed, atm2lnd_inst)
     use atm2lndType, only: atm2lnd_type
+    use clm_time_manager   , only : get_nstep, get_step_size
+    use m_MCTWorld      , only: ThisMCTWorld
 
     type(bounds_type),  intent(in)    :: bounds
     integer          ,  intent(in)    :: seconds_elapsed
@@ -67,6 +69,9 @@ contains
 
     num_grid_points = (bounds%endg - bounds%begg) + 1
     allocate(buffer(num_grid_points, 1))
+
+    !write(iulog,*) 'BEFORE oasis_get(): ', ThisMCTWorld%mygrank, 'nstep = ', get_nstep()
+    !write(iulog,*) 'BEFORE oasis_get(): ', ThisMCTWorld%mygrank, '<Faxa_lwdn> = ', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
 
     !    call oasis_get(oas_id_t, seconds_elapsed, oas_rcv_meta(:,:,oas_id_t), info)
     call oasis_get(oas_id_t,  seconds_elapsed, atm2lnd_inst%forc_t_not_downscaled_grc, info)
@@ -91,6 +96,9 @@ contains
        atm2lnd_inst%forc_solar_grc(g)   =  atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solad_grc(g,1) &
                                         +  atm2lnd_inst%forc_solai_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,1)
     enddo
+
+    write(iulog,*) 'AFTER oasis_get():  ', 'nstep =', get_nstep(), 'proc# =', ThisMCTWorld%mygrank, &
+    & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
 
   end subroutine oas_receive_icon
 

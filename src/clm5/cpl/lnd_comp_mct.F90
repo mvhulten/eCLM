@@ -317,6 +317,8 @@ contains
     use perf_mod        ,  only : t_startf, t_stopf, t_barrierf
     use shr_orb_mod     ,  only : shr_orb_decl
     use ESMF
+    use clm_time_manager   , only : get_nstep, get_step_size
+    use m_MCTWorld      , only: ThisMCTWorld
     !
     ! !ARGUMENTS:
     type(ESMF_Clock) , intent(inout) :: EClock    ! Input synchronization clock from driver
@@ -412,11 +414,15 @@ contains
     ! Map to clm (only when state and/or fluxes need to be updated)
 
     call t_startf ('lc_lnd_import')
+    write(iulog,*) 'BEFOR lnd_import(): ', 'nstep =', get_nstep(), 'proc# =', ThisMCTWorld%mygrank, &
+    & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
     call lnd_import( bounds, &
          x2l = x2l_l%rattr, &
          glc_present = glc_present, &
          atm2lnd_inst = atm2lnd_inst, &
          glc2lnd_inst = glc2lnd_inst)
+    write(iulog,*) 'AFTER lnd_import(): ', 'nstep =', get_nstep(), 'proc# =', ThisMCTWorld%mygrank, &
+    & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
     call t_stopf ('lc_lnd_import')
     ! Use infodata to set orbital values if updated mid-run
 

@@ -30,6 +30,8 @@ contains
     use shr_string_mod  , only: shr_string_listGetName
     use domainMod       , only: ldomain
     use shr_infnan_mod  , only : isnan => shr_infnan_isnan
+    use clm_time_manager   , only : get_nstep, get_step_size
+    use m_MCTWorld      , only: ThisMCTWorld
     !
     ! !ARGUMENTS:
     type(bounds_type)  , intent(in)    :: bounds   ! bounds
@@ -97,7 +99,6 @@ contains
     ! by 1000 mm/m resulting in an overall factor of unity.
     ! Below the units are therefore given in mm/s.
 
-
     do g = bounds%begg,bounds%endg
        i = 1 + (g - bounds%begg)
 
@@ -126,6 +127,7 @@ contains
        atm2lnd_inst%forc_pbot_not_downscaled_grc(g)  = x2l(index_x2l_Sa_pbot,i)      ! ptcmxy  Atm state Pa
        atm2lnd_inst%forc_t_not_downscaled_grc(g)     = x2l(index_x2l_Sa_tbot,i)      ! forc_txy  Atm state K
        atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = x2l(index_x2l_Faxa_lwdn,i)    ! flwdsxy Atm flux  W/m^2
+       !atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = 288.0_r8
 
        forc_rainc                                    = x2l(index_x2l_Faxa_rainc,i)   ! mm/s
        forc_rainl                                    = x2l(index_x2l_Faxa_rainl,i)   ! mm/s

@@ -986,8 +986,8 @@ CONTAINS
              a2x%rAttr(kswvdr,n) = ratio_rvrf*swvdr
              swvdf = avstrm%rAttr(sswdn,n) * 0.50_R8
              a2x%rAttr(kswvdf,n) = (1._R8 - ratio_rvrf)*swvdf
-          else
-             call shr_sys_abort(subName//'ERROR: cannot compute short-wave down')
+          !else
+          !   call shr_sys_abort(subName//'ERROR: cannot compute short-wave down')
           endif
 
           !--- swnet: a diagnostic quantity ---
