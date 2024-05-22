@@ -72,6 +72,9 @@ contains
 
     !write(iulog,*) 'BEFORE oasis_get(): ', ThisMCTWorld%mygrank, 'nstep = ', get_nstep()
     !write(iulog,*) 'BEFORE oasis_get(): ', ThisMCTWorld%mygrank, '<Faxa_lwdn> = ', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
+    atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) = 333.333
+    write(iulog,*) 'BEFOR oasis_get():  ', get_nstep(), ThisMCTWorld%mygrank, &
+    & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
 
     !    call oasis_get(oas_id_t, seconds_elapsed, oas_rcv_meta(:,:,oas_id_t), info)
     call oasis_get(oas_id_t,  seconds_elapsed, atm2lnd_inst%forc_t_not_downscaled_grc, info)
@@ -97,7 +100,7 @@ contains
                                         +  atm2lnd_inst%forc_solai_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,1)
     enddo
 
-    write(iulog,*) 'AFTER oasis_get():  ', 'nstep =', get_nstep(), 'proc# =', ThisMCTWorld%mygrank, &
+    write(iulog,*) 'AFTER oasis_get():  ', get_nstep(), ThisMCTWorld%mygrank, &
     & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
 
   end subroutine oas_receive_icon

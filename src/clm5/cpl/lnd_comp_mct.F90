@@ -414,14 +414,14 @@ contains
     ! Map to clm (only when state and/or fluxes need to be updated)
 
     call t_startf ('lc_lnd_import')
-    write(iulog,*) 'BEFOR lnd_import(): ', 'nstep =', get_nstep(), 'proc# =', ThisMCTWorld%mygrank, &
+    write(iulog,*) 'BEFOR lnd_import(): ', get_nstep(), ThisMCTWorld%mygrank, &
     & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
     call lnd_import( bounds, &
          x2l = x2l_l%rattr, &
          glc_present = glc_present, &
          atm2lnd_inst = atm2lnd_inst, &
          glc2lnd_inst = glc2lnd_inst)
-    write(iulog,*) 'AFTER lnd_import(): ', 'nstep =', get_nstep(), 'proc# =', ThisMCTWorld%mygrank, &
+    write(iulog,*) 'AFTER lnd_import(): ', get_nstep(), ThisMCTWorld%mygrank, &
     & 'lwrad =', sum( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )/size( atm2lnd_inst%forc_lwrad_not_downscaled_grc(:) )
     call t_stopf ('lc_lnd_import')
     ! Use infodata to set orbital values if updated mid-run
