@@ -1,5 +1,6 @@
 module oas_sendReceiveMod
   use shr_kind_mod     , only: r8 => shr_kind_r8
+  use abortutils       , only: endrun
   use clm_time_manager , only: get_nstep, get_step_size
   use decompMod        , only: bounds_type
   use clm_varpar       , only: nlevgrnd
@@ -55,6 +56,9 @@ contains
 #ifdef COUP_OAS_ICON
   subroutine oas_receive_icon(bounds, seconds_elapsed, atm2lnd_inst)
     use atm2lndType, only: atm2lnd_type
+    use clm_varctl      , only: co2_type, co2_ppmv, iulog, use_c13
+    use clm_varcon      , only: rair, o2_molar_const, c13ratio
+    use shr_const_mod   , only: SHR_CONST_TKFRZ
     use clm_time_manager   , only : get_nstep, get_step_size
     use m_MCTWorld      , only: ThisMCTWorld
 
@@ -66,6 +70,43 @@ contains
     integer                           :: info
     integer                           :: g
 
+    real(r8) :: forc_rainc           ! rainxy Atm flux mm/s
+    real(r8) :: e                    ! vapor pressure (Pa)
+    real(r8) :: qsat                 ! saturation specific humidity (kg/kg)
+    real(r8) :: forc_t               ! atmospheric temperature (Kelvin)
+    real(r8) :: forc_q               ! atmospheric specific humidity (kg/kg)
+    real(r8) :: forc_pbot            ! atmospheric pressure (Pa)
+    real(r8) :: forc_rainl           ! rainxy Atm flux mm/s
+    real(r8) :: forc_snowc           ! snowfxy Atm flux  mm/s
+    real(r8) :: forc_snowl           ! snowfxl Atm flux  mm/s
+    real(r8) :: co2_ppmv_diag        ! temporary
+    real(r8) :: co2_ppmv_prog        ! temporary
+    real(r8) :: co2_ppmv_val         ! temporary
+    integer  :: co2_type_idx         ! integer flag for co2_type options
+    real(r8) :: esatw                ! saturation vapor pressure over water (Pa)
+    real(r8) :: esati                ! saturation vapor pressure over ice (Pa)
+    real(r8) :: a0,a1,a2,a3,a4,a5,a6 ! coefficients for esat over water
+    real(r8) :: b0,b1,b2,b3,b4,b5,b6 ! coefficients for esat over ice
+    real(r8) :: tdc, t               ! Kelvins to Celcius function and its input
+    character(len=32), parameter :: sub = 'lnd_import'
+
+    ! Constants to compute vapor pressure
+    parameter (a0=6.107799961_r8    , a1=4.436518521e-01_r8, &
+         a2=1.428945805e-02_r8, a3=2.650648471e-04_r8, &
+         a4=3.031240396e-06_r8, a5=2.034080948e-08_r8, &
+         a6=6.136820929e-11_r8)
+
+    parameter (b0=6.109177956_r8    , b1=5.034698970e-01_r8, &
+         b2=1.886013408e-02_r8, b3=4.176223716e-04_r8, &
+         b4=5.824720280e-06_r8, b5=4.838803174e-08_r8, &
+         b6=1.838826904e-10_r8)
+    !
+    ! function declarations
+    !
+    tdc(t) = min( 50._r8, max(-50._r8,(t-SHR_CONST_TKFRZ)) )
+    esatw(t) = 100._r8*(a0+t*(a1+t*(a2+t*(a3+t*(a4+t*(a5+t*a6))))))
+    esati(t) = 100._r8*(b0+t*(b1+t*(b2+t*(b3+t*(b4+t*(b5+t*b6))))))
+    !---------------------------------------------------------------------------
 
     num_grid_points = (bounds%endg - bounds%begg) + 1
     allocate(buffer(num_grid_points, 1))
@@ -92,6 +133,61 @@ contains
     !SPo: some postprocessing of atm2lnd is missing; may better use x2l 
 
     do g=bounds%begg,bounds%endg
+       forc_t = atm2lnd_inst%forc_t_not_downscaled_grc(g)
+       forc_q = atm2lnd_inst%forc_q_not_downscaled_grc(g)
+       forc_pbot = atm2lnd_inst%forc_pbot_not_downscaled_grc(g)
+
+       atm2lnd_inst%forc_hgt_u_grc(g) = atm2lnd_inst%forc_hgt_grc(g)    !observational height of wind [m]
+       atm2lnd_inst%forc_hgt_t_grc(g) = atm2lnd_inst%forc_hgt_grc(g)    !observational height of temperature [m]
+       atm2lnd_inst%forc_hgt_q_grc(g) = atm2lnd_inst%forc_hgt_grc(g)    !observational height of humidity [m]
+       atm2lnd_inst%forc_vp_grc(g)    = forc_q * forc_pbot  / (0.622_r8 + 0.378_r8 * forc_q)
+       atm2lnd_inst%forc_rho_not_downscaled_grc(g) = &
+            (forc_pbot - 0.378_r8 * atm2lnd_inst%forc_vp_grc(g)) / (rair * forc_t)
+       atm2lnd_inst%forc_po2_grc(g)   = o2_molar_const * forc_pbot
+       atm2lnd_inst%forc_wind_grc(g)  = sqrt(atm2lnd_inst%forc_u_grc(g)**2 + atm2lnd_inst%forc_v_grc(g)**2)
+       atm2lnd_inst%forc_solar_grc(g) = atm2lnd_inst%forc_solad_grc(g,1) + atm2lnd_inst%forc_solai_grc(g,1) + &
+                                        atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,2)
+
+       atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
+       atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
+
+       if (forc_t > SHR_CONST_TKFRZ) then
+          e = esatw(tdc(forc_t))
+       else
+          e = esati(tdc(forc_t))
+       end if
+       qsat           = 0.622_r8*e / (forc_pbot - 0.378_r8*e)
+
+       !modify specific humidity if precip occurs
+       if(1==2) then
+          if((forc_rainc+forc_rainl) > 0._r8) then
+             forc_q = 0.95_r8*qsat
+             !           forc_q = qsat
+             atm2lnd_inst%forc_q_not_downscaled_grc(g) = forc_q
+          endif
+       endif
+
+       atm2lnd_inst%forc_rh_grc(g) = 100.0_r8*(forc_q / qsat)
+
+       ! Determine derived quantities for optional fields
+       ! Note that the following does unit conversions from ppmv to partial pressures (Pa)
+       ! Note that forc_pbot is in Pa
+
+       if (co2_type_idx == 1) then
+          co2_ppmv_val = co2_ppmv_prog
+       else if (co2_type_idx == 2) then
+          co2_ppmv_val = co2_ppmv_diag
+       else
+          co2_ppmv_val = co2_ppmv
+       end if
+       if ( (co2_ppmv_val < 10.0_r8) .or. (co2_ppmv_val > 15000.0_r8) )then
+          call endrun( sub//' ERROR: CO2 is outside of an expected range' )
+       end if
+       atm2lnd_inst%forc_pco2_grc(g)   = co2_ppmv_val * 1.e-6_r8 * forc_pbot
+       if (use_c13) then
+          atm2lnd_inst%forc_pc13o2_grc(g) = co2_ppmv_val * c13ratio * 1.e-6_r8 * forc_pbot
+       end if
+
        atm2lnd_inst%forc_solad_grc(g,1) = 0.5_r8 * atm2lnd_inst%forc_solad_grc(g,1)
        atm2lnd_inst%forc_solad_grc(g,2) = atm2lnd_inst%forc_solad_grc(g,1)
        atm2lnd_inst%forc_solai_grc(g,1) = 0.5_r8 * atm2lnd_inst%forc_solai_grc(g,1)

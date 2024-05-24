@@ -63,6 +63,7 @@ contains
     character(len=32) :: fname       ! name of field that is NaN
     character(len=32), parameter :: sub = 'lnd_import'
 
+#ifndef COUP_OAS_ICON
     ! Constants to compute vapor pressure
     parameter (a0=6.107799961_r8    , a1=4.436518521e-01_r8, &
          a2=1.428945805e-02_r8, a3=2.650648471e-04_r8, &
@@ -80,6 +81,7 @@ contains
     esatw(t) = 100._r8*(a0+t*(a1+t*(a2+t*(a3+t*(a4+t*(a5+t*a6))))))
     esati(t) = 100._r8*(b0+t*(b1+t*(b2+t*(b3+t*(b4+t*(b5+t*b6))))))
     !---------------------------------------------------------------------------
+#endif
 
     co2_type_idx = 0
     if (co2_type == 'prognostic') then
@@ -117,9 +119,9 @@ contains
        atm2lnd_inst%forc_hgt_grc(g)                  = x2l(index_x2l_Sa_z,i)         ! zgcmxy  Atm state m
 #endif
        atm2lnd_inst%forc_topo_grc(g)                 = x2l(index_x2l_Sa_topo,i)      ! Atm surface height (m)
+#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_u_grc(g)                    = x2l(index_x2l_Sa_u,i)         ! forc_uxy  Atm state m/s
        atm2lnd_inst%forc_v_grc(g)                    = x2l(index_x2l_Sa_v,i)         ! forc_vxy  Atm state m/s
-#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_solad_grc(g,2)              = x2l(index_x2l_Faxa_swndr,i)   ! forc_sollxy  Atm flux  W/m^2
        atm2lnd_inst%forc_solad_grc(g,1)              = x2l(index_x2l_Faxa_swvdr,i)   ! forc_solsxy  Atm flux  W/m^2
        atm2lnd_inst%forc_solai_grc(g,2)              = x2l(index_x2l_Faxa_swndf,i)   ! forc_solldxy Atm flux  W/m^2
@@ -174,6 +176,7 @@ contains
 
        ! Determine derived quantities for required fields
 
+#ifndef COUP_OAS_ICON
        forc_t = atm2lnd_inst%forc_t_not_downscaled_grc(g)
        forc_q = atm2lnd_inst%forc_q_not_downscaled_grc(g)
        forc_pbot = atm2lnd_inst%forc_pbot_not_downscaled_grc(g)
@@ -189,10 +192,8 @@ contains
        atm2lnd_inst%forc_solar_grc(g) = atm2lnd_inst%forc_solad_grc(g,1) + atm2lnd_inst%forc_solai_grc(g,1) + &
                                         atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,2)
 
-#ifndef COUP_OAS_ICON
        atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
        atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
-#endif
 
        if (forc_t > SHR_CONST_TKFRZ) then
           e = esatw(tdc(forc_t))
@@ -212,7 +213,6 @@ contains
 
        atm2lnd_inst%forc_rh_grc(g) = 100.0_r8*(forc_q / qsat)
 
-#ifndef COUP_OAS_ICON
        ! Check that solar, specific-humidity and LW downward aren't negative
        if ( atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) <= 0.0_r8 )then
           call endrun( sub//' ERROR: Longwave down sent from the atmosphere model is negative or zero' )
@@ -246,6 +246,7 @@ contains
        ! atm2lnd_inst%forc_rh_grc(g) = min( 100.0_r8, atm2lnd_inst%forc_rh_grc(g) )
        ! atm2lnd_inst%forc_rh_grc(g) = max(   0.0_r8, atm2lnd_inst%forc_rh_grc(g) )
 
+#ifndef COUP_OAS_ICON
        ! Determine derived quantities for optional fields
        ! Note that the following does unit conversions from ppmv to partial pressures (Pa)
        ! Note that forc_pbot is in Pa
@@ -264,6 +265,7 @@ contains
        if (use_c13) then
           atm2lnd_inst%forc_pc13o2_grc(g) = co2_ppmv_val * c13ratio * 1.e-6_r8 * forc_pbot
        end if
+#endif
 
        if (ndep_from_cpl) then
           ! The coupler is sending ndep in units if kgN/m2/s - and clm uses units of gN/m2/sec - so the
