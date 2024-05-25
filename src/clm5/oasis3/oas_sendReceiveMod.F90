@@ -148,6 +148,11 @@ contains
        atm2lnd_inst%forc_solar_grc(g) = atm2lnd_inst%forc_solad_grc(g,1) + atm2lnd_inst%forc_solai_grc(g,1) + &
                                         atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,2)
 
+       forc_rainc = 0
+       forc_rainl = atm2lnd_inst%forc_rain_not_downscaled_grc  ! mm/s
+       forc_snowc = 0
+       forc_snowl = atm2lnd_inst%forc_snow_not_downscaled_grc  ! mm/s
+
        atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
        atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
 

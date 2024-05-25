@@ -133,12 +133,12 @@ contains
        atm2lnd_inst%forc_t_not_downscaled_grc(g)     = x2l(index_x2l_Sa_tbot,i)      ! forc_txy  Atm state K
        atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = x2l(index_x2l_Faxa_lwdn,i)    ! flwdsxy Atm flux  W/m^2
        !atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) = 288.0_r8
+#endif
 
        forc_rainc                                    = x2l(index_x2l_Faxa_rainc,i)   ! mm/s
        forc_rainl                                    = x2l(index_x2l_Faxa_rainl,i)   ! mm/s
        forc_snowc                                    = x2l(index_x2l_Faxa_snowc,i)   ! mm/s
        forc_snowl                                    = x2l(index_x2l_Faxa_snowl,i)   ! mm/s
-#endif
 
        ! atmosphere coupling, for prognostic/prescribed aerosols
        atm2lnd_inst%forc_aer_grc(g,1)                = x2l(index_x2l_Faxa_bcphidry,i)
