@@ -81,7 +81,6 @@ contains
     esatw(t) = 100._r8*(a0+t*(a1+t*(a2+t*(a3+t*(a4+t*(a5+t*a6))))))
     esati(t) = 100._r8*(b0+t*(b1+t*(b2+t*(b3+t*(b4+t*(b5+t*b6))))))
     !---------------------------------------------------------------------------
-#endif
 
     co2_type_idx = 0
     if (co2_type == 'prognostic') then
@@ -94,6 +93,7 @@ contains
     else if (co2_type == 'diagnostic' .and. index_x2l_Sa_co2diag == 0) then
        call endrun( sub//' ERROR: must have nonzero index_x2l_Sa_co2diag for co2_type equal to diagnostic' )
     end if
+#endif
 
     ! Note that the precipitation fluxes received  from the coupler
     ! are in units of kg/s/m^2. To convert these precipitation rates

@@ -61,6 +61,7 @@ contains
     use shr_const_mod   , only: SHR_CONST_TKFRZ
     use clm_time_manager   , only : get_nstep, get_step_size
     use m_MCTWorld      , only: ThisMCTWorld
+    use clm_cpl_indices , only: index_x2l_Sa_co2prog, index_x2l_Sa_co2diag
 
     type(bounds_type),  intent(in)    :: bounds
     integer          ,  intent(in)    :: seconds_elapsed
@@ -108,6 +109,18 @@ contains
     esati(t) = 100._r8*(b0+t*(b1+t*(b2+t*(b3+t*(b4+t*(b5+t*b6))))))
     !---------------------------------------------------------------------------
 
+    co2_type_idx = 0
+    if (co2_type == 'prognostic') then
+       co2_type_idx = 1
+    else if (co2_type == 'diagnostic') then
+       co2_type_idx = 2
+    end if
+    if (co2_type == 'prognostic' .and. index_x2l_Sa_co2prog == 0) then
+       call endrun( sub//' ERROR: must have nonzero index_x2l_Sa_co2prog for co2_type equal to prognostic' )
+    else if (co2_type == 'diagnostic' .and. index_x2l_Sa_co2diag == 0) then
+       call endrun( sub//' ERROR: must have nonzero index_x2l_Sa_co2diag for co2_type equal to diagnostic' )
+    end if
+
     num_grid_points = (bounds%endg - bounds%begg) + 1
     allocate(buffer(num_grid_points, 1))
 
@@ -149,12 +162,12 @@ contains
                                         atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,2)
 
        forc_rainc = 0
-       forc_rainl = atm2lnd_inst%forc_rain_not_downscaled_grc  ! mm/s
+       forc_rainl = atm2lnd_inst%forc_rain_not_downscaled_grc(g)  ! mm/s
        forc_snowc = 0
-       forc_snowl = atm2lnd_inst%forc_snow_not_downscaled_grc  ! mm/s
+       forc_snowl = atm2lnd_inst%forc_snow_not_downscaled_grc(g)  ! mm/s
 
-       atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
-       atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
+       !atm2lnd_inst%forc_rain_not_downscaled_grc(g)  = forc_rainc + forc_rainl
+       !atm2lnd_inst%forc_snow_not_downscaled_grc(g)  = forc_snowc + forc_snowl
 
        if (forc_t > SHR_CONST_TKFRZ) then
           e = esatw(tdc(forc_t))
