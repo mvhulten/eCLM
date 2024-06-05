@@ -548,6 +548,7 @@ CONTAINS
     !----------------------------------------------------------------------------
 
     call t_adj_detailf(+2)
+#ifndef COUP_OAS_ICON
     call datm_comp_run( &
          EClock = EClock, &
          x2a = x2a, &
@@ -566,6 +567,7 @@ CONTAINS
          orbLambm0 = orbLambm0, &
          orbObliqr = orbObliqr, &
          nextsw_cday = nextsw_cday)
+#endif
     call t_adj_detailf(-2)
 
     call t_stopf('DATM_INIT')
