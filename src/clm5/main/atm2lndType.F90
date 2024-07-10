@@ -635,6 +635,15 @@ contains
          avgflag='A', long_name='atmospheric wind velocity magnitude', &
          ptr_gcell=this%forc_wind_grc, default = 'inactive')
 
+    this%forc_u_grc(begg:endg) = spval
+    call hist_addfld1d (fname='U', units='m/s',  &
+         avgflag='A', long_name='atmospheric zonal wind', &
+         ptr_lnd=this%forc_u_grc)
+    this%forc_v_grc(begg:endg) = spval
+    call hist_addfld1d (fname='V', units='m/s',  &
+         avgflag='A', long_name='atmospheric meridional wind', &
+         ptr_lnd=this%forc_v_grc)
+
     this%forc_hgt_grc(begg:endg) = spval
     call hist_addfld1d (fname='ZBOT', units='m',  &
          avgflag='A', long_name='atmospheric reference height', &
