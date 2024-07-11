@@ -84,12 +84,43 @@ contains
     !SPo: some postprocessing of atm2lnd is missing; may better use x2l 
 
     do g=bounds%begg,bounds%endg
+       ! Determine derived quantities for required fields
+
+       forc_t = atm2lnd_inst%forc_t_not_downscaled_grc(g)
+       forc_q = atm2lnd_inst%forc_q_not_downscaled_grc(g)
+       forc_pbot = atm2lnd_inst%forc_pbot_not_downscaled_grc(g)
+
+       atm2lnd_inst%forc_hgt_u_grc(g) = atm2lnd_inst%forc_hgt_grc(g)    !observational height of wind [m]
+       atm2lnd_inst%forc_hgt_t_grc(g) = atm2lnd_inst%forc_hgt_grc(g)    !observational height of temperature [m]
+       atm2lnd_inst%forc_hgt_q_grc(g) = atm2lnd_inst%forc_hgt_grc(g)    !observational height of humidity [m]
+       atm2lnd_inst%forc_vp_grc(g)    = forc_q * forc_pbot  / (0.622_r8 + 0.378_r8 * forc_q)
+       atm2lnd_inst%forc_rho_not_downscaled_grc(g) = &
+            (forc_pbot - 0.378_r8 * atm2lnd_inst%forc_vp_grc(g)) / (rair * forc_t)
+       atm2lnd_inst%forc_po2_grc(g)   = o2_molar_const * forc_pbot
+       atm2lnd_inst%forc_wind_grc(g)  = sqrt(atm2lnd_inst%forc_u_grc(g)**2 + atm2lnd_inst%forc_v_grc(g)**2)
        atm2lnd_inst%forc_solad_grc(g,1) = 0.5_r8 * atm2lnd_inst%forc_solad_grc(g,1)
        atm2lnd_inst%forc_solad_grc(g,2) = atm2lnd_inst%forc_solad_grc(g,1)
        atm2lnd_inst%forc_solai_grc(g,1) = 0.5_r8 * atm2lnd_inst%forc_solai_grc(g,1)
        atm2lnd_inst%forc_solai_grc(g,2) = atm2lnd_inst%forc_solai_grc(g,1)
        atm2lnd_inst%forc_solar_grc(g)   =  atm2lnd_inst%forc_solad_grc(g,2) + atm2lnd_inst%forc_solad_grc(g,1) &
                                         +  atm2lnd_inst%forc_solai_grc(g,2) + atm2lnd_inst%forc_solai_grc(g,1)
+       if (forc_t > SHR_CONST_TKFRZ) then
+          e = esatw(tdc(forc_t))
+       else
+          e = esati(tdc(forc_t))
+       end if
+       qsat           = 0.622_r8*e / (forc_pbot - 0.378_r8*e)
+
+       !modify specific humidity if precip occurs
+       if(1==2) then
+          if(atm2lnd_inst%forc_rain_not_downscaled_grc(g) > 0._r8) then
+             forc_q = 0.95_r8*qsat
+             !           forc_q = qsat
+             atm2lnd_inst%forc_q_not_downscaled_grc(g) = forc_q
+          endif
+       endif
+
+       atm2lnd_inst%forc_rh_grc(g) = 100.0_r8*(forc_q / qsat)
     enddo
 
   end subroutine oas_receive_icon
