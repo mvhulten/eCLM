@@ -55,6 +55,10 @@ contains
 #ifdef COUP_OAS_ICON
   subroutine oas_receive_icon(bounds, seconds_elapsed, atm2lnd_inst)
     use atm2lndType, only: atm2lnd_type
+    use clm_varctl      , only: co2_type, co2_ppmv, iulog, use_c13
+    use clm_varctl      , only: ndep_from_cpl
+    use clm_varcon      , only: rair, o2_molar_const, c13ratio
+    use shr_const_mod   , only: SHR_CONST_TKFRZ
 
     type(bounds_type),  intent(in)    :: bounds
     integer          ,  intent(in)    :: seconds_elapsed
@@ -63,7 +67,42 @@ contains
     integer                           :: num_grid_points
     integer                           :: info
     integer                           :: g
+    real(r8) :: e                    ! vapor pressure (Pa)
+    real(r8) :: qsat                 ! saturation specific humidity (kg/kg)
+    real(r8) :: forc_t               ! atmospheric temperature (Kelvin)
+    real(r8) :: forc_q               ! atmospheric specific humidity (kg/kg)
+    real(r8) :: forc_pbot            ! atmospheric pressure (Pa)
+    real(r8) :: forc_rainl           ! rainxy Atm flux mm/s
+    real(r8) :: forc_snowc           ! snowfxy Atm flux  mm/s
+    real(r8) :: forc_snowl           ! snowfxl Atm flux  mm/s
+    real(r8) :: co2_ppmv_diag        ! temporary
+    real(r8) :: co2_ppmv_prog        ! temporary
+    real(r8) :: co2_ppmv_val         ! temporary
+    integer  :: co2_type_idx         ! integer flag for co2_type options
+    real(r8) :: esatw                ! saturation vapor pressure over water (Pa)
+    real(r8) :: esati                ! saturation vapor pressure over ice (Pa)
+    real(r8) :: a0,a1,a2,a3,a4,a5,a6 ! coefficients for esat over water
+    real(r8) :: b0,b1,b2,b3,b4,b5,b6 ! coefficients for esat over ice
+    real(r8) :: tdc, t               ! Kelvins to Celcius function and its input
 
+
+    ! Constants to compute vapor pressure
+    parameter (a0=6.107799961_r8    , a1=4.436518521e-01_r8, &
+         a2=1.428945805e-02_r8, a3=2.650648471e-04_r8, &
+         a4=3.031240396e-06_r8, a5=2.034080948e-08_r8, &
+         a6=6.136820929e-11_r8)
+
+    parameter (b0=6.109177956_r8    , b1=5.034698970e-01_r8, &
+         b2=1.886013408e-02_r8, b3=4.176223716e-04_r8, &
+         b4=5.824720280e-06_r8, b5=4.838803174e-08_r8, &
+         b6=1.838826904e-10_r8)
+    !
+    ! function declarations
+    !
+    tdc(t) = min( 50._r8, max(-50._r8,(t-SHR_CONST_TKFRZ)) )
+    esatw(t) = 100._r8*(a0+t*(a1+t*(a2+t*(a3+t*(a4+t*(a5+t*a6))))))
+    esati(t) = 100._r8*(b0+t*(b1+t*(b2+t*(b3+t*(b4+t*(b5+t*b6))))))
+    !---------------------------------------------------------------------------
 
     num_grid_points = (bounds%endg - bounds%begg) + 1
     allocate(buffer(num_grid_points, 1))
@@ -121,6 +160,32 @@ contains
        endif
 
        atm2lnd_inst%forc_rh_grc(g) = 100.0_r8*(forc_q / qsat)
+
+       ! Determine derived quantities for optional fields
+       ! Note that the following does unit conversions from ppmv to partial pressures (Pa)
+       ! Note that forc_pbot is in Pa
+
+       if (co2_type_idx == 1) then
+          co2_ppmv_val = co2_ppmv_prog
+       else if (co2_type_idx == 2) then
+          co2_ppmv_val = co2_ppmv_diag
+       else
+          co2_ppmv_val = co2_ppmv
+       end if
+       if ( (co2_ppmv_val < 10.0_r8) .or. (co2_ppmv_val > 15000.0_r8) )then
+          call endrun( sub//' ERROR: CO2 is outside of an expected range' )
+       end if
+       atm2lnd_inst%forc_pco2_grc(g)   = co2_ppmv_val * 1.e-6_r8 * forc_pbot
+       if (use_c13) then
+          atm2lnd_inst%forc_pc13o2_grc(g) = co2_ppmv_val * c13ratio * 1.e-6_r8 * forc_pbot
+       end if
+
+       if (ndep_from_cpl) then
+          ! The coupler is sending ndep in units if kgN/m2/s - and clm uses units of gN/m2/sec - so the
+          ! following conversion needs to happen
+          atm2lnd_inst%forc_ndep_grc(g) = (x2l(index_x2l_Faxa_nhx, i) + x2l(index_x2l_faxa_noy, i))*1000._r8
+       end if
+
     enddo
 
   end subroutine oas_receive_icon
