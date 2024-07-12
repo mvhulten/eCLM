@@ -290,6 +290,54 @@ contains
     begc = bounds%begc; endc = bounds%endc
     begg = bounds%begg; endg = bounds%endg
 
+    this%t_rad_grc(begc:endc) = 0._r8
+    call hist_addfld1d (fname='CLMINFRA', units='K', &
+         avgflag='A', &
+         long_name='radiative temperature', &
+         ptr_col=this%t_rad_grc)
+
+    !this%albd_grc(begc:endc,1:2) = 0._r8
+    !call hist_addfld1d (fname='CLMALBED', units='', &
+    !     avgflag='A', &
+    !     long_name='', &
+    !     ptr_col=this%albd_grc)
+
+    !this%albi_grc(begc:endc,1:2) = 0._r8
+    !call hist_addfld1d (fname='CLMALBEI', units='', &
+    !     avgflag='A', &
+    !     long_name='', &
+    !     ptr_col=this%albi_grc)
+
+    this%taux_grc(begc:endc) = 0._r8
+    call hist_addfld1d (fname='CLMTAUX', units='', &
+         avgflag='A', &
+         long_name='', &
+         ptr_col=this%taux_grc)
+
+    this%tauy_grc(begc:endc) = 0._r8
+    call hist_addfld1d (fname='CLMTAUY', units='', &
+         avgflag='A', &
+         long_name='', &
+         ptr_col=this%tauy_grc)
+
+    this%eflx_sh_tot_grc(begc:endc) = 0._r8
+    call hist_addfld1d (fname='CLMSHFLX', units='', &
+         avgflag='A', &
+         long_name='', &
+         ptr_col=this%eflx_sh_tot_grc)
+
+    this%eflx_lh_tot_grc(begc:endc) = 0._r8
+    call hist_addfld1d (fname='CLMLHFLX', units='', &
+         avgflag='A', &
+         long_name='', &
+         ptr_col=this%eflx_lh_tot_grc)
+
+    this%t_sf_grc(begc:endc) = 0._r8
+    call hist_addfld1d (fname='CLMTGRND', units='', &
+         avgflag='A', &
+         long_name='', &
+         ptr_col=this%t_sf_grc)
+
     this%eflx_sh_tot_grc(begg:endg) = 0._r8
     call hist_addfld1d (fname='FSH_TO_COUPLER', units='W/m^2',  &
          avgflag='A', &
