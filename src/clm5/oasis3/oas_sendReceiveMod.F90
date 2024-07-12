@@ -1,5 +1,6 @@
 module oas_sendReceiveMod
   use shr_kind_mod     , only: r8 => shr_kind_r8
+  use abortutils       , only: endrun
   use clm_time_manager , only: get_nstep, get_step_size
   use decompMod        , only: bounds_type
   use clm_varpar       , only: nlevgrnd
@@ -84,7 +85,7 @@ contains
     real(r8) :: a0,a1,a2,a3,a4,a5,a6 ! coefficients for esat over water
     real(r8) :: b0,b1,b2,b3,b4,b5,b6 ! coefficients for esat over ice
     real(r8) :: tdc, t               ! Kelvins to Celcius function and its input
-
+    character(len=32), parameter :: sub = 'lnd_import'
 
     ! Constants to compute vapor pressure
     parameter (a0=6.107799961_r8    , a1=4.436518521e-01_r8, &
@@ -103,6 +104,13 @@ contains
     esatw(t) = 100._r8*(a0+t*(a1+t*(a2+t*(a3+t*(a4+t*(a5+t*a6))))))
     esati(t) = 100._r8*(b0+t*(b1+t*(b2+t*(b3+t*(b4+t*(b5+t*b6))))))
     !---------------------------------------------------------------------------
+
+    co2_type_idx = 0
+    if (co2_type == 'prognostic') then
+       co2_type_idx = 1
+    else if (co2_type == 'diagnostic') then
+       co2_type_idx = 2
+    end if
 
     num_grid_points = (bounds%endg - bounds%begg) + 1
     allocate(buffer(num_grid_points, 1))
@@ -178,12 +186,6 @@ contains
        atm2lnd_inst%forc_pco2_grc(g)   = co2_ppmv_val * 1.e-6_r8 * forc_pbot
        if (use_c13) then
           atm2lnd_inst%forc_pc13o2_grc(g) = co2_ppmv_val * c13ratio * 1.e-6_r8 * forc_pbot
-       end if
-
-       if (ndep_from_cpl) then
-          ! The coupler is sending ndep in units if kgN/m2/s - and clm uses units of gN/m2/sec - so the
-          ! following conversion needs to happen
-          atm2lnd_inst%forc_ndep_grc(g) = (x2l(index_x2l_Faxa_nhx, i) + x2l(index_x2l_faxa_noy, i))*1000._r8
        end if
 
     enddo
