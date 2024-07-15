@@ -209,6 +209,7 @@ contains
        if ( atm2lnd_inst%forc_lwrad_not_downscaled_grc(g) <= 0.0_r8 )then
           call endrun( sub//' ERROR: Longwave down sent from the atmosphere model is negative or zero' )
        end if
+#endif
        if ( (atm2lnd_inst%forc_solad_grc(g,1) < 0.0_r8) .or.  (atm2lnd_inst%forc_solad_grc(g,2) < 0.0_r8) &
        .or. (atm2lnd_inst%forc_solai_grc(g,1) < 0.0_r8) .or.  (atm2lnd_inst%forc_solai_grc(g,2) < 0.0_r8) ) then
           call endrun( sub//' ERROR: One of the solar fields (indirect/diffuse, vis or near-IR)'// &
@@ -217,7 +218,6 @@ contains
        if ( atm2lnd_inst%forc_q_not_downscaled_grc(g) < 0.0_r8 )then
           call endrun( sub//' ERROR: Bottom layer specific humidty sent from the atmosphere model is less than zero' )
        end if
-#endif
 
        ! Check if any input from the coupler is NaN
        if ( any(isnan(x2l(:,i))) )then
