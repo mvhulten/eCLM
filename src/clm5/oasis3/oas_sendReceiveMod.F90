@@ -56,6 +56,7 @@ contains
   subroutine oas_receive_icon(bounds, seconds_elapsed, x2l)
     use atm2lndType, only: atm2lnd_type
     use clm_cpl_indices
+    use clm_varcon, only: rair, cpair
 
     type(bounds_type),  intent(in)    :: bounds
     integer          ,  intent(in)    :: seconds_elapsed
@@ -91,6 +92,10 @@ contains
        x2l(index_x2l_Faxa_swvdf,i) = 0.5_r8 * x2l(index_x2l_Faxa_swvdf,i)
        x2l(index_x2l_Faxa_swndf,i) = x2l(index_x2l_Faxa_swvdf,i)
     enddo
+
+    ! Potential temperature following Stull (1988/2003, p. 7) and atm2lndMod.F90:171
+    x2l(index_x2l_Sa_ptem,:) = x2l(index_x2l_Sa_tbot,:) * &
+                             & (100.e3/x2l(index_x2l_Sa_pbot,:))**(rair/cpair)
 
   end subroutine oas_receive_icon
 
